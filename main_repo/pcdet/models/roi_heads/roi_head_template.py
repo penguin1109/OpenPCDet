@@ -65,8 +65,8 @@ class RoIHeadTemplate(nn.Module):
             return batch_dict
             
         batch_size = batch_dict['batch_size']
-        batch_box_preds = batch_dict['batch_box_preds']
-        batch_cls_preds = batch_dict['batch_cls_preds']
+        batch_box_preds = batch_dict['batch_box_preds'] ## 앞서 RPN에서 예측한 [B, HXWX2, #box coder]
+        batch_cls_preds = batch_dict['batch_cls_preds'] ## 앞서 RPN에서 예측한 [B, HXWX2, 2 (BG|FG)]
         rois = batch_box_preds.new_zeros((batch_size, nms_config.NMS_POST_MAXSIZE, batch_box_preds.shape[-1]))
         roi_scores = batch_box_preds.new_zeros((batch_size, nms_config.NMS_POST_MAXSIZE))
         roi_labels = batch_box_preds.new_zeros((batch_size, nms_config.NMS_POST_MAXSIZE), dtype=torch.long)

@@ -51,7 +51,7 @@ __global__ void ball_query_kernel_stack(int B, int M, float radius, int nsample,
         float y = xyz[k * 3 + 1];
         float z = xyz[k * 3 + 2];
         float d2 = (new_x - x) * (new_x - x) + (new_y - y) * (new_y - y) + (new_z - z) * (new_z - z);
-        if (d2 < radius2){
+        if (d2 < radius2){ // voxel의 center point와 keypoint사이의 거리가 반지름보다 작을 때
             if (cnt == 0){
                 for (int l = 0; l < nsample; ++l) {
                     idx[l] = k;

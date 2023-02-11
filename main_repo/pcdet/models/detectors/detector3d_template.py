@@ -5,7 +5,7 @@ import torch.nn as nn
 import numpy as np
 from ...ops.iou3d_nms import iou3d_nms_utils
 from ...utils.spconv_utils import find_all_spconv_keys
-from .. import backbones_2d, backbones_3d, dense_heads, roi_heads
+from .. import backbones_2d, backbones_3d, dense_heads, roi_heads, object_query_heads
 from ..backbones_2d import map_to_bev
 from ..backbones_3d import pfe, vfe
 from ..model_utils import model_nms_utils
@@ -22,7 +22,7 @@ class Detector3DTemplate(nn.Module):
 
         self.module_topology = [
             'vfe', 'backbone_3d', 'map_to_bev_module', 'pfe',
-            'backbone_2d', 'dense_head',  'point_head', 'roi_head'
+            'backbone_2d', 'dense_head',  'point_head', 'roi_head', 'object_query_head'
         ]
 
     @property
@@ -48,6 +48,7 @@ class Detector3DTemplate(nn.Module):
             )
             self.add_module(module_name, module)
         return model_info_dict['module_list']
+    
 
     def build_vfe(self, model_info_dict):
         if self.model_cfg.get('VFE', None) is None:
@@ -171,6 +172,21 @@ class Detector3DTemplate(nn.Module):
 
         model_info_dict['module_list'].append(point_head_module)
         return point_head_module, model_info_dict
+        
+    ### MY NEW IMPLEMENTATION ###
+    def build_object_query_head(self, model_info_dict):
+        if self.model_cfg.get('OBJECT_QUERY_HEAD', None) is None:
+            return None, model_info_dict
+        
+        object_query_head_module = object_query_heads.__all__[self.model_cfg.OBJECT_QUERY_HEAD.NAME](
+            model_cfg=self.model_cfg.OBJECT_QUERY_HEAD,
+            bev_channels=model_info_dict['num_bev_channels'], ## BEV map이 2D Backbone을 거친 뒤에 feature dimension의 크기이다.
+            point_channels=model_info_dict['num_point_features'], ## Voxel Set Abstraction으로 구한 Key Point 별 feature vector의 dimension
+            voxel_size=model_info_dict['voxel_size'],
+            num_class = self.num_class is not self.model_cfg.OBJECT_QUERY_HEAD.CLASS_AGNOSTIC else 1
+        )
+        model_info_dict['module_list'].append(object_query_head_module)
+        return object_query_head_module, model_info_dict
 
     def forward(self, **kwargs):
         raise NotImplementedError
